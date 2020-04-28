@@ -19,7 +19,7 @@ import DeleteIcon from "@material-ui/icons/Delete";
 import OpenIcon from "@material-ui/icons/OpenInBrowser";
 
 import Confirmation from "components/Confirmation";
-import useUploader from "hooks/useFiretable/useUploader";
+import useUploader, { FileValue } from "hooks/useFiretable/useUploader";
 import { IMAGE_MIME_TYPES } from "constants/fields";
 import { useFiretableContext } from "contexts/firetableContext";
 
@@ -120,9 +120,9 @@ export default function Image({
     [value]
   );
 
-  const handleDelete = (downloadURL: string) => () => {
+  const handleDelete = (ref: string) => () => {
     const newValue = [...value];
-    const index = _findIndex(newValue, ["downloadURL", downloadURL]);
+    const index = _findIndex(newValue, ["ref", ref]);
     newValue.splice(index, 1);
     onSubmit(newValue);
   };
@@ -154,7 +154,7 @@ export default function Image({
       <Grid item xs className={classes.imglistContainer}>
         <Grid container spacing={1} wrap="nowrap">
           {Array.isArray(value) &&
-            value.map((file: { name: string; downloadURL: string }) => (
+            value.map((file: FileValue) => (
               <Grid item key={file.downloadURL}>
                 {disabled ? (
                   <Tooltip title="Click to open">
@@ -192,7 +192,7 @@ export default function Image({
                       >
                         <ButtonBase
                           className={classes.img}
-                          onClick={handleDelete(file.downloadURL)}
+                          onClick={handleDelete(file.ref)}
                           style={{
                             backgroundImage: `url(${file.downloadURL})`,
                           }}

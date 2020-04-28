@@ -8,6 +8,7 @@ export type UploaderState = {
   error?: string;
 };
 export type FileValue = {
+  ref: string;
   downloadURL: string;
   name: string;
   type: string;
@@ -101,6 +102,7 @@ const useUploader = () => {
                 : [];
 
               newValue.push({
+                ref: uploadTask.snapshot.ref.fullPath,
                 downloadURL,
                 name: file.name,
                 type: file.type,
