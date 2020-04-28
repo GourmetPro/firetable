@@ -9,7 +9,7 @@ export type UploaderState = {
 };
 export type FileValue = {
   ref: string;
-  downloadURL: string;
+  url: string;
   name: string;
   type: string;
   lastModifiedTS: number;
@@ -103,7 +103,7 @@ const useUploader = () => {
 
               newValue.push({
                 ref: uploadTask.snapshot.ref.fullPath,
-                downloadURL,
+                url: downloadURL,
                 name: file.name,
                 type: file.type,
                 lastModifiedTS: file.lastModified,

@@ -140,7 +140,7 @@ export default function FileUploader({
                   size="medium"
                   icon={<FileIcon />}
                   label={file.name}
-                  onClick={() => window.open(file.downloadURL)}
+                  onClick={() => window.open(file.url)}
                   onDelete={
                     editable !== false ? () => handleDelete(i) : undefined
                   }

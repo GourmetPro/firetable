@@ -155,14 +155,14 @@ export default function Image({
         <Grid container spacing={1} wrap="nowrap">
           {Array.isArray(value) &&
             value.map((file: FileValue) => (
-              <Grid item key={file.downloadURL}>
+              <Grid item key={file.url}>
                 {disabled ? (
                   <Tooltip title="Click to open">
                     <ButtonBase
                       className={classes.img}
-                      onClick={() => window.open(file.downloadURL, "_blank")}
+                      onClick={() => window.open(file.url, "_blank")}
                       style={{
-                        backgroundImage: `url(${file.downloadURL})`,
+                        backgroundImage: `url(${file.url})`,
                       }}
                     >
                       <Grid
@@ -194,7 +194,7 @@ export default function Image({
                           className={classes.img}
                           onClick={handleDelete(file.ref)}
                           style={{
-                            backgroundImage: `url(${file.downloadURL})`,
+                            backgroundImage: `url(${file.url})`,
                           }}
                         >
                           <Grid
