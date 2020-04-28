@@ -28,6 +28,7 @@
     "csv-parse": "^4.4.6",
     "date-fns": "^2.9.0",
     "dompurify": "^2.0.8",
+    "env-cmd": "^10.1.0",
     "file-saver": "^2.0.2",
     "firebase": "^6.6.0",
     "formik": "^2.1.4",
@@ -59,6 +60,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "build:production": "env-cmd -f .env.production yarn build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "deploy": "firebase deploy --project \"$PROJECT_ID\" --debug --token \"$FIREBASE_TOKEN\" --only hosting"
