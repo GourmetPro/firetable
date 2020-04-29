@@ -96,7 +96,7 @@ export default function Image({
   const { tableState } = useFiretableContext();
   const classes = useStyles({ rowHeight: tableState?.config?.rowHeight ?? 44 });
 
-  const [uploaderState, upload] = useUploader();
+  const { uploaderState, upload, deleteUpload } = useUploader();
   const { progress, isLoading } = uploaderState;
 
   // Store a preview image locally while uploading
@@ -113,6 +113,7 @@ export default function Image({
           files: [imageFile],
           previousValue: value,
           onComplete: () => setLocalImage(""),
+          multiple: (column.key as string).endsWith("s"),
         });
         setLocalImage(URL.createObjectURL(imageFile));
       }
@@ -121,10 +122,16 @@ export default function Image({
   );
 
   const handleDelete = (ref: string) => () => {
-    const newValue = [...value];
-    const index = _findIndex(newValue, ["ref", ref]);
-    newValue.splice(index, 1);
-    onSubmit(newValue);
+    if (Array.isArray(value)) {
+      const newValue = [...value];
+      const index = _findIndex(newValue, ["ref", ref]);
+      const toBeDeleted = newValue.splice(index, 1);
+      toBeDeleted.length && deleteUpload(toBeDeleted[0]);
+      onSubmit(newValue);
+    } else {
+      deleteUpload(value);
+      onSubmit(undefined);
+    }
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -135,6 +142,10 @@ export default function Image({
 
   const dropzoneProps = getRootProps();
   const disabled = column.editable === false;
+
+  const wValue: FileValue[] =
+    (value && (Array.isArray(value) ? value : [value])) || [];
+
   return (
     <Grid
       container
@@ -153,65 +164,60 @@ export default function Image({
 
       <Grid item xs className={classes.imglistContainer}>
         <Grid container spacing={1} wrap="nowrap">
-          {Array.isArray(value) &&
-            value.map((file: FileValue) => (
-              <Grid item key={file.url}>
-                {disabled ? (
-                  <Tooltip title="Click to open">
-                    <ButtonBase
-                      className={classes.img}
-                      onClick={() => window.open(file.url, "_blank")}
-                      style={{
-                        backgroundImage: `url(${file.url})`,
-                      }}
+          {wValue.map((file: FileValue) => (
+            <Grid item key={file.url}>
+              {disabled ? (
+                <Tooltip title="Click to open">
+                  <ButtonBase
+                    className={classes.img}
+                    onClick={() => window.open(file.url, "_blank")}
+                    style={{
+                      backgroundImage: `url(${file.url})`,
+                    }}
+                  >
+                    <Grid
+                      container
+                      justify="center"
+                      alignItems="center"
+                      className={classes.deleteImgHover}
                     >
-                      <Grid
-                        container
-                        justify="center"
-                        alignItems="center"
-                        className={classes.deleteImgHover}
-                      >
-                        {disabled ? (
-                          <OpenIcon />
-                        ) : (
-                          <DeleteIcon color="inherit" />
-                        )}
-                      </Grid>
-                    </ButtonBase>
-                  </Tooltip>
-                ) : (
-                  <Tooltip title="Click to delete">
-                    <div>
-                      <Confirmation
-                        message={{
-                          title: "Delete Image",
-                          body: "Are you sure you want to delete this image?",
-                          confirm: "Delete",
+                      {disabled ? <OpenIcon /> : <DeleteIcon color="inherit" />}
+                    </Grid>
+                  </ButtonBase>
+                </Tooltip>
+              ) : (
+                <Tooltip title="Click to delete">
+                  <div>
+                    <Confirmation
+                      message={{
+                        title: "Delete Image",
+                        body: "Are you sure you want to delete this image?",
+                        confirm: "Delete",
+                      }}
+                      stopPropagation
+                    >
+                      <ButtonBase
+                        className={classes.img}
+                        onClick={handleDelete(file.ref)}
+                        style={{
+                          backgroundImage: `url(${file.url})`,
                         }}
-                        stopPropagation
                       >
-                        <ButtonBase
-                          className={classes.img}
-                          onClick={handleDelete(file.ref)}
-                          style={{
-                            backgroundImage: `url(${file.url})`,
-                          }}
+                        <Grid
+                          container
+                          justify="center"
+                          alignItems="center"
+                          className={classes.deleteImgHover}
                         >
-                          <Grid
-                            container
-                            justify="center"
-                            alignItems="center"
-                            className={classes.deleteImgHover}
-                          >
-                            <DeleteIcon color="inherit" />
-                          </Grid>
-                        </ButtonBase>
-                      </Confirmation>
-                    </div>
-                  </Tooltip>
-                )}
-              </Grid>
-            ))}
+                          <DeleteIcon color="inherit" />
+                        </Grid>
+                      </ButtonBase>
+                    </Confirmation>
+                  </div>
+                </Tooltip>
+              )}
+            </Grid>
+          ))}
 
           {localImage && (
             <Grid item>

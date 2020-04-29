@@ -3,7 +3,7 @@ import clsx from "clsx";
 import { FieldProps } from "formik";
 
 import { useDropzone } from "react-dropzone";
-import useUploader from "hooks/useFiretable/useUploader";
+import useUploader, { FileValue } from "hooks/useFiretable/useUploader";
 
 import {
   makeStyles,
@@ -105,7 +105,7 @@ export default function ImageUploader({
   const disabled = editable === false;
   const classes = useStyles();
 
-  const [uploaderState, upload] = useUploader();
+  const { uploaderState, upload, deleteUpload } = useUploader();
   const { progress } = uploaderState;
 
   // Store a preview image locally while uploading
@@ -133,9 +133,15 @@ export default function ImageUploader({
   );
 
   const handleDelete = (index: number) => {
-    const newValue = [...field.value];
-    newValue.splice(index, 1);
-    form.setFieldValue(field.name, newValue);
+    if (Array.isArray(field.value)) {
+      const newValue = [...field.value];
+      const toBeDeleted = newValue.splice(index, 1);
+      toBeDeleted.length && deleteUpload(toBeDeleted[0]);
+      form.setFieldValue(field.name, newValue);
+    } else {
+      deleteUpload(field.value);
+      form.setFieldValue(field.name, undefined);
+    }
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -143,6 +149,11 @@ export default function ImageUploader({
     multiple: false,
     accept: IMAGE_MIME_TYPES,
   });
+
+  const wValue: FileValue[] =
+    (field.value &&
+      (Array.isArray(field.value) ? field.value : [field.value])) ||
+    [];
 
   return (
     <>
@@ -163,64 +174,63 @@ export default function ImageUploader({
       )}
 
       <Grid container spacing={1} className={classes.imagesContainer}>
-        {Array.isArray(field.value) &&
-          field.value.map((image, i) => (
-            <Grid item key={image.downloadURL}>
-              {disabled ? (
-                <Tooltip title="Click to open">
-                  <ButtonBase
-                    className={classes.img}
-                    onClick={() => window.open(image.downloadURL, "_blank")}
-                    style={{
-                      backgroundImage: `url(${image.downloadURL})`,
-                    }}
+        {wValue.map((image, i) => (
+          <Grid item key={image.url}>
+            {disabled ? (
+              <Tooltip title="Click to open">
+                <ButtonBase
+                  className={classes.img}
+                  onClick={() => window.open(image.url, "_blank")}
+                  style={{
+                    backgroundImage: `url(${image.url})`,
+                  }}
+                >
+                  <Grid
+                    container
+                    justify="center"
+                    alignItems="center"
+                    className={clsx(classes.overlay, classes.deleteImgHover)}
                   >
-                    <Grid
-                      container
-                      justify="center"
-                      alignItems="center"
-                      className={clsx(classes.overlay, classes.deleteImgHover)}
-                    >
-                      {disabled ? <OpenIcon /> : <DeleteIcon color="inherit" />}
-                    </Grid>
-                  </ButtonBase>
-                </Tooltip>
-              ) : (
-                <Tooltip title="Click to delete">
-                  <div>
-                    <Confirmation
-                      message={{
-                        title: "Delete Image",
-                        body: "Are you sure you want to delete this image?",
-                        confirm: "Delete",
+                    {disabled ? <OpenIcon /> : <DeleteIcon color="inherit" />}
+                  </Grid>
+                </ButtonBase>
+              </Tooltip>
+            ) : (
+              <Tooltip title="Click to delete">
+                <div>
+                  <Confirmation
+                    message={{
+                      title: "Delete Image",
+                      body: "Are you sure you want to delete this image?",
+                      confirm: "Delete",
+                    }}
+                    stopPropagation
+                  >
+                    <ButtonBase
+                      className={classes.img}
+                      onClick={() => handleDelete(i)}
+                      style={{
+                        backgroundImage: `url(${image.url})`,
                       }}
-                      stopPropagation
                     >
-                      <ButtonBase
-                        className={classes.img}
-                        onClick={() => handleDelete(i)}
-                        style={{
-                          backgroundImage: `url(${image.downloadURL})`,
-                        }}
+                      <Grid
+                        container
+                        justify="center"
+                        alignItems="center"
+                        className={clsx(
+                          classes.overlay,
+                          classes.deleteImgHover
+                        )}
                       >
-                        <Grid
-                          container
-                          justify="center"
-                          alignItems="center"
-                          className={clsx(
-                            classes.overlay,
-                            classes.deleteImgHover
-                          )}
-                        >
-                          <DeleteIcon color="inherit" />
-                        </Grid>
-                      </ButtonBase>
-                    </Confirmation>
-                  </div>
-                </Tooltip>
-              )}
-            </Grid>
-          ))}
+                        <DeleteIcon color="inherit" />
+                      </Grid>
+                    </ButtonBase>
+                  </Confirmation>
+                </div>
+              </Tooltip>
+            )}
+          </Grid>
+        ))}
 
         {localImage && (
           <Grid item>

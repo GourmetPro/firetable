@@ -27,6 +27,7 @@ export type UploadProps = {
   files: File[];
   previousValue?: FileValue[];
   onComplete?: (values: FileValue[]) => void;
+  multiple?: boolean;
 };
 
 const useUploader = () => {
@@ -40,6 +41,7 @@ const useUploader = () => {
     files,
     previousValue,
     onComplete,
+    multiple = true,
   }: UploadProps) => {
     uploaderDispatch({ isLoading: true });
 
@@ -97,21 +99,25 @@ const useUploader = () => {
           uploadTask.snapshot.ref
             .getDownloadURL()
             .then((downloadURL: string) => {
-              const newValue: FileValue[] = Array.isArray(previousValue)
-                ? previousValue
-                : [];
+              let newValue: FileValue[] = [
+                {
+                  ref: uploadTask.snapshot.ref.fullPath,
+                  url: downloadURL,
+                  name: file.name,
+                  type: file.type,
+                  lastModifiedTS: file.lastModified,
+                },
+              ];
 
-              newValue.push({
-                ref: uploadTask.snapshot.ref.fullPath,
-                url: downloadURL,
-                name: file.name,
-                type: file.type,
-                lastModifiedTS: file.lastModified,
-              });
+              if (multiple && Array.isArray(previousValue)) {
+                newValue = previousValue.concat(newValue);
+              }
 
               // STore in the document if docRef provided
               if (docRef && docRef.update)
-                docRef.update({ [fieldName]: newValue });
+                docRef.update({
+                  [fieldName]: multiple ? newValue : newValue[0],
+                });
               // Also call callback if it exists
               // IMPORTANT: Formik may not update its local values after this
               // function updates the doc, so you MUST update it manually
@@ -123,11 +129,11 @@ const useUploader = () => {
     });
   };
 
-  return [uploaderState, upload, uploaderDispatch] as [
-    typeof uploaderState,
-    typeof upload,
-    typeof uploaderDispatch
-  ];
+  const deleteUpload = (fileValue: FileValue) => {
+    bucket.ref(fileValue.ref).delete();
+  };
+
+  return { uploaderState, upload, uploaderDispatch, deleteUpload };
 };
 
 export default useUploader;

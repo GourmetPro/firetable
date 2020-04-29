@@ -16,7 +16,7 @@ import {
 import UploadIcon from "assets/icons/Upload";
 
 import Confirmation from "components/Confirmation";
-import useUploader from "hooks/useFiretable/useUploader";
+import useUploader, { FileValue } from "hooks/useFiretable/useUploader";
 import { FileIcon } from "constants/fields";
 
 const useStyles = makeStyles(theme =>
@@ -59,7 +59,7 @@ export default function File({
 }: CustomCellProps) {
   const classes = useStyles();
 
-  const [uploaderState, upload] = useUploader();
+  const { uploaderState, upload, deleteUpload } = useUploader();
   const { progress, isLoading } = uploaderState;
 
   const onDrop = useCallback(
@@ -72,17 +72,24 @@ export default function File({
           fieldName: column.key as string,
           files: [file],
           previousValue: value,
+          multiple: (column.key as string).endsWith("s"),
         });
       }
     },
     [value]
   );
 
-  const handleDelete = (downloadURL: string) => {
-    const newValue = [...value];
-    const index = _findIndex(newValue, ["downloadURL", downloadURL]);
-    newValue.splice(index, 1);
-    onSubmit(newValue);
+  const handleDelete = (ref: string) => {
+    if (Array.isArray(value)) {
+      const newValue = [...value];
+      const index = _findIndex(newValue, ["ref", ref]);
+      const toBeDeleted = newValue.splice(index, 1);
+      toBeDeleted.length && deleteUpload(toBeDeleted[0]);
+      onSubmit(newValue);
+    } else {
+      deleteUpload(value);
+      onSubmit(undefined);
+    }
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -91,6 +98,8 @@ export default function File({
   });
 
   const dropzoneProps = getRootProps();
+  const wValue: FileValue[] =
+    (value && (Array.isArray(value) ? value : [value])) || [];
 
   return (
     <Grid
@@ -110,35 +119,34 @@ export default function File({
 
       <Grid item xs className={classes.chipList}>
         <Grid container spacing={1} wrap="nowrap">
-          {Array.isArray(value) &&
-            value.reverse().map((file: any) => (
-              <Grid item key={file.name} className={classes.chipGridItem}>
-                <Confirmation
-                  message={{
-                    title: "Delete File",
-                    body: "Are you sure you want to delete this file?",
-                    confirm: "Delete",
+          {wValue.reverse().map((file: FileValue) => (
+            <Grid item key={file.name} className={classes.chipGridItem}>
+              <Confirmation
+                message={{
+                  title: "Delete File",
+                  body: "Are you sure you want to delete this file?",
+                  confirm: "Delete",
+                }}
+                functionName={column.editable !== false ? "onDelete" : ""}
+                stopPropagation
+              >
+                <Chip
+                  icon={<FileIcon />}
+                  label={file.name}
+                  onClick={e => {
+                    window.open(file.url);
+                    e.stopPropagation();
                   }}
-                  functionName={column.editable !== false ? "onDelete" : ""}
-                  stopPropagation
-                >
-                  <Chip
-                    icon={<FileIcon />}
-                    label={file.name}
-                    onClick={e => {
-                      window.open(file.downloadURL);
-                      e.stopPropagation();
-                    }}
-                    onDelete={
-                      column.editable !== false
-                        ? () => handleDelete(file.downloadURL)
-                        : undefined
-                    }
-                    className={classes.chip}
-                  />
-                </Confirmation>
-              </Grid>
-            ))}
+                  onDelete={
+                    column.editable !== false
+                      ? () => handleDelete(file.ref)
+                      : undefined
+                  }
+                  className={classes.chip}
+                />
+              </Confirmation>
+            </Grid>
+          ))}
         </Grid>
       </Grid>
 

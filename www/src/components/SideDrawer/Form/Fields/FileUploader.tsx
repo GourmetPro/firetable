@@ -68,7 +68,7 @@ export default function FileUploader({
 }: IFileUploaderProps) {
   const classes = useStyles();
 
-  const [uploaderState, upload] = useUploader();
+  const { uploaderState, upload, deleteUpload } = useUploader();
   const { progress } = uploaderState;
 
   // Store a preview image locally while uploading
@@ -96,15 +96,26 @@ export default function FileUploader({
   );
 
   const handleDelete = (index: number) => {
-    const newValue = [...field.value];
-    newValue.splice(index, 1);
-    form.setFieldValue(field.name, newValue);
+    if (Array.isArray(field.value)) {
+      const newValue = [...field.value];
+      const toBeDeleted = newValue.splice(index, 1);
+      toBeDeleted.length && deleteUpload(toBeDeleted[0]);
+      form.setFieldValue(field.name, newValue);
+    } else {
+      deleteUpload(field.value);
+      form.setFieldValue(field.name, undefined);
+    }
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     multiple: false,
   });
+
+  const wValue: FileValue[] =
+    (field.value &&
+      (Array.isArray(field.value) ? field.value : [field.value])) ||
+    [];
 
   return (
     <>
@@ -125,30 +136,29 @@ export default function FileUploader({
       )}
 
       <Grid container spacing={1} className={classes.chipList}>
-        {Array.isArray(field.value) &&
-          field.value.map((file: FileValue, i) => (
-            <Grid item key={file.name} className={classes.chipGridItem}>
-              <Confirmation
-                message={{
-                  title: "Delete File",
-                  body: "Are you sure you want to delete this file?",
-                  confirm: "Delete",
-                }}
-                functionName={editable !== false ? "onDelete" : ""}
-              >
-                <Chip
-                  size="medium"
-                  icon={<FileIcon />}
-                  label={file.name}
-                  onClick={() => window.open(file.url)}
-                  onDelete={
-                    editable !== false ? () => handleDelete(i) : undefined
-                  }
-                  className={classes.chip}
-                />
-              </Confirmation>
-            </Grid>
-          ))}
+        {wValue.map((file: FileValue, i) => (
+          <Grid item key={file.name} className={classes.chipGridItem}>
+            <Confirmation
+              message={{
+                title: "Delete File",
+                body: "Are you sure you want to delete this file?",
+                confirm: "Delete",
+              }}
+              functionName={editable !== false ? "onDelete" : ""}
+            >
+              <Chip
+                size="medium"
+                icon={<FileIcon />}
+                label={file.name}
+                onClick={() => window.open(file.url)}
+                onDelete={
+                  editable !== false ? () => handleDelete(i) : undefined
+                }
+                className={classes.chip}
+              />
+            </Confirmation>
+          </Grid>
+        ))}
 
         {localFile && (
           <Grid item className={classes.chipGridItem}>

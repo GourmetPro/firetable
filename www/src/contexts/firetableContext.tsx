@@ -122,7 +122,7 @@ export const FiretableContextProvider: React.FC = ({ children }) => {
     fieldName: string,
     value: any
   ) => {
-    if (value === null || value === undefined) return;
+    //if (value === null || value === undefined) return;
 
     const ftUser = firetableUser(currentUser);
     const _ft_updatedAt = new Date();
@@ -130,7 +130,8 @@ export const FiretableContextProvider: React.FC = ({ children }) => {
 
     ref
       .update({
-        [fieldName]: value,
+        [fieldName]:
+          value === undefined ? firebase.firestore.FieldValue.delete() : value,
         _ft_updatedAt,
         updatedAt: _ft_updatedAt,
         _ft_updatedBy,
